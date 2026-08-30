@@ -1,8 +1,7 @@
 # Plugin Gaia para Claude Code
 
 Ensina o Claude a operar o [Gaia](https://github.com/MoreiraLaures/gaia) — um
-orquestrador de subagentes de IA — e conecta o servidor MCP dele
-automaticamente, sem `claude mcp add` à mão.
+orquestrador de subagentes de IA.
 
 | item | invocação | o que faz |
 |---|---|---|
@@ -11,7 +10,22 @@ automaticamente, sem `claude mcp add` à mão.
 | skill `o-que-e-gaia` | `/gaia:o-que-e-gaia` | contexto do sistema |
 | skill `decompor-em-cadeia` | `/gaia:decompor-em-cadeia` | procedimento de decomposição |
 | skill `escrever-prova` | `/gaia:escrever-prova` | como escrever `comando_teste` que discrimina |
-| servidor MCP `gaia` | automático | as nove ferramentas |
+
+---
+
+## O que este plugin NÃO faz
+
+**Não sobe servidor MCP, não roda container, não pede variável de ambiente.**
+
+Os agentes daqui não são um servidor — eles **consomem a rota MCP que já
+existe**. O Gaia é um daemon no ar em algum lugar, sua rota `/mcp/sse` já foi
+registrada como conector, e o trabalho do plugin é ensinar o Claude a usá-la
+bem.
+
+Isso é decisão de desenho, não simplificação. Um plugin que declarasse o próprio
+servidor MCP criaria um segundo caminho para o mesmo Gaia: as nove ferramentas
+apareceriam duas vezes com prefixos diferentes, e a configuração passaria a
+morar em dois lugares que podem discordar.
 
 ---
 
@@ -31,61 +45,56 @@ Em desenvolvimento, direto do diretório:
 claude --plugin-dir ./plugins/gaia
 ```
 
+Não há mais nada a configurar no plugin. O que precisa existir é o **conector**.
+
 ---
 
-## Configuração — duas variáveis de ambiente
+## O conector do Gaia — o que o plugin espera encontrar
 
-### `GAIA_MCP_TOKEN` (obrigatória)
+Registre pelas configurações de conector do seu cliente, com dois dados:
 
-Para obter: entre no Gaia, abra **`/perfil/pagina`**, seção *conector MCP*, gere
-um token. **Ele aparece uma única vez** — o banco guarda só o SHA-256. Perdeu,
-gere outro e revogue o anterior.
+**URL** — o endereço do seu Gaia terminando em `/mcp/sse`:
 
-```powershell
-$env:GAIA_MCP_TOKEN = "gaia_..."
+```
+https://SEU-HOST/mcp/sse
 ```
 
-```bash
-export GAIA_MCP_TOKEN="gaia_..."
+O daemon monta o sub-app MCP no prefixo `/mcp`, e o endpoint SSE do SDK fica em
+`/mcp/sse`. Apontar para `/mcp` não conecta.
+
+**Cabeçalho** — `Authorization: Bearer SEU_TOKEN`, com o token cru:
+
+```
+Authorization: Bearer gaia_...
 ```
 
-O nome **não** é `GAIA_TOKEN_API`. Aquele nome pertence a outra coisa e já
-causou confusão: deixou de ser credencial de entrada quando a autenticação
-passou a validar contra a tabela de tokens de usuário. O sintoma foi exatamente
-*"as ferramentas aparecem mas não funcionam"*.
+O token sai de **`/perfil/pagina`**, seção *conector MCP*, e aparece **uma única
+vez** — o banco guarda só o SHA-256. Perdeu, gere outro e revogue o anterior.
 
-### `GAIA_MCP_URL` (opcional)
-
-Padrão: `http://127.0.0.1:8770/mcp/sse`. Só defina se o seu Gaia não está no
-loopback:
-
-```bash
-export GAIA_MCP_URL="https://SEU-HOST/mcp/sse"
-```
-
-**A URL termina em `/mcp/sse`, não em `/mcp`.** O daemon monta o sub-app MCP no
-prefixo `/mcp`, e o endpoint SSE do SDK fica em `/mcp/sse`.
-
-> **Por que variável de ambiente e não `userConfig`?** Medido: o campo
-> `userConfig` do manifesto só é preenchido pelo fluxo interativo de
-> `claude plugin install`. Com `--plugin-dir`, a substituição
-> `${user_config.url_mcp}` falha com *"Missing required user configuration
-> value"* e o servidor não sobe. Variável de ambiente funciona nos dois
-> caminhos, aceita valor padrão, e mantém o segredo fora do repositório.
+Não mande `Authorization` **e** `X-API-Key` juntos: os dois carregam o mesmo
+token, e apresentar ambos é ambiguidade que o Gaia recusa com `401` por
+princípio — não cabe ao servidor escolher qual você quis usar.
 
 ---
 
 ## Diagnóstico — os quatro erros, medidos
 
-### `HTTP 404: Invalid OAuth error response` → **é o seu token**
+### Pede para "vincular", ou `Dynamic Client Registration rejected (HTTP 404)`
 
-A mensagem não menciona credencial e é a mais enganosa das quatro. O que
-acontece: o Gaia devolve `401`, o cliente MCP interpreta como "preciso
-autenticar", tenta descobrir um endpoint OAuth que não existe, e reporta o
-`404` da descoberta. O erro real ficou dois passos atrás.
+**É o token.** A mensagem não menciona credencial e é a mais enganosa das
+quatro. Medido contra o daemon:
 
-Se você vir isso, o `GAIA_MCP_TOKEN` está errado, revogado, ou não foi exportado
-na sessão em que o Claude roda.
+| requisição | resposta |
+|---|---|
+| `GET /mcp/sse` sem cabeçalho | `401` |
+| `GET /mcp/sse` com cabeçalho vazio | `401` |
+| `/.well-known/oauth-authorization-server` | `404` |
+| registro dinâmico em `/register` | `404` |
+
+O Gaia devolve `401`, o cliente interpreta como "preciso autenticar", procura um
+endpoint OAuth que não existe, e reporta o `404` da descoberta. O erro real
+ficou dois passos atrás. **O botão de vincular nunca vai funcionar** — não há
+OAuth no Gaia, a autenticação é por cabeçalho.
 
 ### `421` → **é o host, não a credencial**
 
@@ -94,7 +103,7 @@ reprova todo `Host` que não seja loopback. Se você acessa por túnel ou domín
 o hostname precisa estar em `GAIA_MCP_HOSTS_PERMITIDOS` **no servidor**. Token
 válido não resolve `421`.
 
-### `Unable to connect. Is the computer able to access the url?` → **é a URL**
+### `Unable to connect` → **é a URL**
 
 O endereço não responde. Confira porta e sufixo `/mcp/sse`.
 
@@ -109,22 +118,23 @@ autenticação de verdade. Listadas e inoperantes significa credencial.
 
 **As instruções do servidor são truncadas em 2048 caracteres.** Medido no log
 do cliente: `Server instructions truncated from 6791 to 2048 chars`. O prompt do
-coordenador que o daemon envia perde cerca de 70% do texto no caminho. É por
-isso que este plugin carrega as regras no arquivo do **agente** e nas **skills**,
-não confiando nas instruções do servidor: arquivo de agente não é truncado.
+coordenador que o daemon envia perde cerca de 70% do texto no caminho.
 
-**Se você já tem um conector manual para o mesmo Gaia, remova-o.** O plugin sobe
-o servidor sozinho; com os dois, as nove ferramentas aparecem duas vezes com
-prefixos diferentes.
+É a razão de ser deste plugin. Arquivo de agente e descrição de ferramenta
+**não** são truncados — então as regras duras vivem em `agents/` e `skills/`,
+onde chegam inteiras. O plugin não instala capacidade; ele instala o
+entendimento que o canal do servidor não consegue transportar.
+
+**O prefixo das ferramentas varia.** Conforme o conector foi registrado, o mesmo
+`consultar_grafo` pode chegar como `mcp__teste-gaia__consultar_grafo`,
+`mcp__gaia__consultar_grafo` ou com um identificador longo no meio. Por isso os
+agentes procuram pelo **nome da ferramenta**, nunca pelo do servidor — e por
+isso não declaram allowlist: travar um allowlist com prefixo adivinhado deixa o
+agente sem nenhuma ferramenta e com um erro que não menciona o motivo.
 
 **Conector antigo guarda a lista de ferramentas antiga.** Se o seu conector foi
 criado quando o Gaia tinha cinco ferramentas, ele continua mostrando cinco.
 Reconecte para ver as nove.
-
-**A chave `mcpServers` no manifesto é obrigatória.** Medido: sem
-`"mcpServers": "./.mcp.json"` em `plugin.json`, o arquivo `.mcp.json` é
-**ignorado em silêncio** — o servidor não aparece no log, não há erro, e o
-plugin carrega agentes e skills normalmente. Falha sem sintoma.
 
 ---
 
@@ -141,15 +151,8 @@ heurístico. Fica declarado, não prescrito.
 
 ---
 
-## Acoplamentos
+## Acoplamento com a versão do Gaia
 
-- **Transporte SSE.** O daemon publica `mcp.sse_app(...)`. A especificação MCP
-  marca SSE como *deprecated* em favor de streamable-http; no dia em que o Gaia
-  migrar, o `.mcp.json` deste plugin muda junto ou o plugin para de conectar.
-- **Nome das ferramentas.** O servidor registra-se como `plugin:gaia:gaia`. Os
-  agentes deste plugin **não** declaram allowlist de ferramentas: travar um
-  allowlist com nome adivinhado deixa o agente sem nenhuma ferramenta e com um
-  erro que não menciona o motivo.
-- **Versão do Gaia.** Este plugin assume as nove ferramentas e o campo
-  `execucoes` em `consultar_tarefa`. Gaia anterior a isso conecta, e o agente
-  encontra menos do que espera.
+Este plugin assume as nove ferramentas e o campo `execucoes` em
+`consultar_tarefa`. Gaia anterior a isso conecta, e o agente encontra menos do
+que espera — ele reclama do que falta em vez de fingir que funcionou.

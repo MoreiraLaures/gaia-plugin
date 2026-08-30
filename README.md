@@ -12,15 +12,14 @@ claude plugin marketplace add MoreiraLaures/gaia-plugin
 claude plugin install gaia@gaia
 ```
 
-Depois de instalado, defina o token:
+Não há nada a configurar no plugin: ele não sobe servidor, não roda container e
+não pede variável de ambiente. Os agentes **consomem a rota MCP que já existe** —
+basta que o conector do seu Gaia esteja registrado, apontando para
+`https://SEU-HOST/mcp/sse` com o cabeçalho `Authorization: Bearer SEU_TOKEN`.
 
-```bash
-export GAIA_MCP_TOKEN="gaia_..."
-```
-
-O endpoint tem padrão (`http://127.0.0.1:8770/mcp/sse`) e só precisa de
-`GAIA_MCP_URL` se o seu Gaia não estiver no loopback. Detalhes e diagnóstico de
-erro em [`plugins/gaia/README.md`](plugins/gaia/README.md).
+Se o conector não estiver lá, os agentes dizem isso e explicam como criá-lo, em
+vez de tentarem contornar. Detalhes e diagnóstico de erro em
+[`plugins/gaia/README.md`](plugins/gaia/README.md).
 
 ---
 
@@ -53,7 +52,11 @@ verificados.
 | contexto do Gaia | `/gaia:o-que-e-gaia` |
 | procedimento de decomposição | `/gaia:decompor-em-cadeia` |
 | como escrever prova executável | `/gaia:escrever-prova` |
-| servidor MCP com as nove ferramentas | automático |
+
+O plugin instala **entendimento, não capacidade**. As nove ferramentas vêm do
+conector MCP do Gaia, que já existe; o que faltava era o Claude saber usá-las —
+e o canal do próprio servidor não dá conta, porque o cliente trunca as
+instruções dele em 2048 caracteres (o prompt do Gaia tem 6791).
 
 ---
 
@@ -66,7 +69,6 @@ plugins/
   gaia/
     .claude-plugin/
       plugin.json           manifesto (o ÚNICO arquivo que vai aqui dentro)
-    .mcp.json               servidor MCP do Gaia
     agents/                 orquestrador, explicador
     skills/                 o-que-e-gaia, decompor-em-cadeia, escrever-prova
     README.md               configuração e diagnóstico
@@ -77,8 +79,8 @@ plugins/
 ## Segredo
 
 Nenhum token, hostname de sistema em operação ou credencial vive neste
-repositório. As duas configurações vêm do ambiente — `GAIA_MCP_TOKEN` e
-`GAIA_MCP_URL` — e o endpoint tem o loopback como padrão.
+repositório — e não há onde eles caberiam, porque o plugin não guarda
+configuração de conexão nenhuma. URL e token moram no conector, fora daqui.
 
 Se você for abrir uma contribuição, mantenha assim: um repositório de plugin é
 público por vocação, e endereço de sistema real publicado é alvo publicado.

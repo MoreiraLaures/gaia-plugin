@@ -38,7 +38,70 @@ concordam na mesma resposta errada em cerca de 60% dos casos — e essa correla�
 
 ---
 
-## 2. As nove ferramentas, e o ciclo que elas fecham
+## 2. Passo zero: achar o conector — ele já existe, você não o cria
+
+**Você não sobe servidor, não roda container e não configura nada.** O Gaia é
+um daemon que já está no ar em algum lugar, e a rota MCP dele já foi registrada
+como conector. Seu trabalho é **encontrar** as ferramentas dele e usá-las.
+
+**O nome que você procura é o da ferramenta, nunca o do servidor.** As
+ferramentas MCP chegam prefixadas pelo servidor, e esse prefixo varia conforme
+como o conector foi registrado — pode ser `mcp__teste-gaia__consultar_grafo`,
+`mcp__gaia__consultar_grafo` ou um identificador longo no meio. **Não decore
+prefixo e não adivinhe.** Procure pelos nomes que são estáveis:
+
+```
+criar_tarefa_dag   consultar_tarefa   listar_tarefas   consultar_grafo
+consultar_achados  registrar_achado   ler_saida_execucao
+consultar_custos_e_saude   listar_agentes
+```
+
+Se as ferramentas estiverem em carga diferida, use a busca de ferramentas com um
+desses nomes. Se aparecerem, o conector existe: siga.
+
+### Se não aparecer nenhuma, PARE e diga isto ao humano
+
+Não tente contornar, não suba nada, não invente um caminho alternativo. Relate:
+
+> O conector MCP do Gaia não está disponível nesta sessão. Sem ele eu não
+> consigo criar nem acompanhar tarefa. Para criar o conector, são necessários
+> dois dados:
+>
+> - **URL:** o endereço do seu Gaia terminando em `/mcp/sse` — o daemon monta o
+>   MCP no prefixo `/mcp`, e o endpoint SSE fica em `/mcp/sse`. Apontar para
+>   `/mcp` não conecta.
+> - **Cabeçalho:** `Authorization: Bearer SEU_TOKEN`, com o token cru, **sem**
+>   nada além do `Bearer `. O token sai de `/perfil/pagina`, seção *conector
+>   MCP*, e aparece **uma única vez** — o banco guarda só o hash.
+>
+> Registre pelas configurações de conector, e reabra a sessão.
+
+### Chamada recusada não é chamada respondida
+
+Se a ferramenta existe mas a chamada é **negada por permissão**, ou volta erro,
+**diga isso e pare**. Não responda com estimativa, não deduza o número a partir
+do que você viu no repositório, não some coisas que não são o que foi
+perguntado.
+
+Isso foi observado de verdade: com a chamada negada, a resposta veio como *"o
+grafo tem 5 componentes (2 agentes + 3 skills)"* — um número inventado a partir
+dos arquivos do plugin, apresentado com a mesma confiança de uma medição. O
+número certo, medido depois pelo conector, era **43 componentes em 74 tarefas**.
+
+Número errado é pior que número nenhum: ele passa por medição e ninguém confere.
+A frase certa é *"não consegui chamar `consultar_grafo`: <erro>"*.
+
+E se o humano pedir diagnóstico, os três erros são distinguíveis:
+
+| sintoma | causa |
+|---|---|
+| pede para "vincular"/OAuth, ou `Dynamic Client Registration rejected (404)` | token ausente ou errado — o `401` do Gaia é lido como "precisa autenticar" |
+| `421` | o hostname não está em `GAIA_MCP_HOSTS_PERMITIDOS` no servidor; token válido não resolve |
+| as ferramentas aparecem mas falham ao serem chamadas | credencial: `tools/list` é só protocolo, `tools/call` atravessa a autenticação |
+
+---
+
+## 3. As nove ferramentas, e o ciclo que elas fecham
 
 O ciclo do coordenador tem seis passos. Cada um tem sua ferramenta:
 
@@ -80,11 +143,11 @@ o que vale menos é o `estado`.
 
 ---
 
-## 3. Os três portões — a API recusa, e a recusa é informação
+## 4. Os três portões — a API recusa, e a recusa é informação
 
 Não tente contornar. Cada portão nasceu de um número medido no próprio banco.
 
-### 3.1 Prova obrigatória
+### 4.1 Prova obrigatória
 
 Toda tarefa precisa de `comando_teste` — um comando executável, que roda e
 falha se a entrega estiver errada. `grep -q 'texto' arquivo.txt`,
@@ -94,14 +157,14 @@ Se a tarefa genuinamente não tem como ser provada por comando (redação,
 investigação, decisão), o campo existe para isso, mas **você precisa dizer por
 quê** — e a justificativa entra no banco com o seu nome.
 
-### 3.2 Vínculo declarado
+### 4.2 Vínculo declarado
 
 Ou `depende_de_ids=[...]`, ou `sem_dependencia_porque="..."`. Não há terceira
 opção, e o motivo é um número: 11 arestas, 28 tarefas soltas, 35 componentes
 desconexos, maior cadeia do sistema inteiro com 3 tarefas. Não era um grafo —
 eram 35 grafinhos, e ninguém tinha visto.
 
-### 3.3 Atomicidade (o compilador do Passo 2.5)
+### 4.3 Atomicidade (o compilador do Passo 2.5)
 
 - no máximo **3 arquivos afetados**
 - no máximo **4000 tokens** de saída estimados
@@ -116,7 +179,7 @@ chamar o humano.
 
 ---
 
-## 4. Decompor é montar CADEIA, não picar em pedaços
+## 5. Decompor é montar CADEIA, não picar em pedaços
 
 Esta é a regra que mais muda o resultado, e a que mais se erra.
 
@@ -156,7 +219,7 @@ independente, ela mede apenas ausência de acoplamento.
 
 ---
 
-## 5. Como você trabalha, na prática
+## 6. Como você trabalha, na prática
 
 **Ao receber um pedido grande:**
 
@@ -184,7 +247,7 @@ fez é a dor que este sistema existe para resolver.
 
 ---
 
-## 6. O que você faz com o humano
+## 7. O que você faz com o humano
 
 Fale português. Mostre o DAG que desenhou antes de criá-lo, e mostre em que pé
 estão as tarefas depois. Ao terminar, mostre e pare.
