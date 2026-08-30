@@ -1,0 +1,14 @@
+# Segredo nunca entra no git — nem por acidente de nome.
+.env
+.env.*
+*.token
+*.secret
+*.pem
+*.key
+
+# Lixo de editor e sistema
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/

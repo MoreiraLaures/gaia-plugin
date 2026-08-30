@@ -1,0 +1,19 @@
+{
+  "name": "gaia",
+  "version": "0.1.0",
+  "description": "Ensina o Claude a operar o Gaia: decompor em cadeia, exigir prova, ler veredito.",
+  "author": {
+    "name": "MoreiraLaures",
+    "url": "https://github.com/MoreiraLaures"
+  },
+  "repository": "https://github.com/MoreiraLaures/Gaia",
+  "license": "UNLICENSED",
+  "keywords": [
+    "orquestrador",
+    "dag",
+    "mcp",
+    "subagentes",
+    "gaia"
+  ],
+  "mcpServers": "./.mcp.json"
+}

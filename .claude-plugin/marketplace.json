@@ -1,0 +1,18 @@
+{
+  "name": "gaia",
+  "owner": {
+    "name": "MoreiraLaures",
+    "url": "https://github.com/MoreiraLaures"
+  },
+  "plugins": [
+    {
+      "name": "gaia",
+      "source": "./plugins/gaia",
+      "description": "Coordenador do Gaia: decompor em cadeia, exigir prova, ler veredito.",
+      "category": "orchestration"
+    }
+  ],
+  "metadata": {
+    "description": "Plugins do Gaia, orquestrador de subagentes de IA: o agente coordenador, os agentes que explicam o sistema e o servidor MCP com as nove ferramentas."
+  }
+}
