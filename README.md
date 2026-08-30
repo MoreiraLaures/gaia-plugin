@@ -5,7 +5,7 @@ o plugin que ensina o Claude a operar o [Gaia](#o-que-é-o-gaia), um orquestrado
 de subagentes de IA.
 
 ```bash
-claude plugin marketplace add MoreiraLaures/Gaia
+claude plugin marketplace add MoreiraLaures/gaia-plugin
 ```
 
 ```bash

@@ -1,6 +1,6 @@
 # Plugin Gaia para Claude Code
 
-Ensina o Claude a operar o [Gaia](https://github.com/MoreiraLaures/Gaia) — um
+Ensina o Claude a operar o [Gaia](https://github.com/MoreiraLaures/gaia) — um
 orquestrador de subagentes de IA — e conecta o servidor MCP dele
 automaticamente, sem `claude mcp add` à mão.
 
@@ -18,7 +18,7 @@ automaticamente, sem `claude mcp add` à mão.
 ## Instalação
 
 ```bash
-claude plugin marketplace add MoreiraLaures/Gaia
+claude plugin marketplace add MoreiraLaures/gaia-plugin
 ```
 
 ```bash
