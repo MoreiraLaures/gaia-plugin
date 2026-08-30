@@ -43,8 +43,15 @@ também são verificados. Confiança é propriedade do conjunto, não do indiví
 
 Nenhuma é gosto. Cada uma veio de algo medido no próprio banco.
 
-**Prova obrigatória** — 46 concluídas, 3 provadas. *"Não era taxa de acerto. Era
-taxa de agente dizendo que terminou."*
+**Prova obrigatória, e ela é MEDIDA** — o comando de teste roda antes de o
+agente trabalhar e depois. Só conta como prova quem **reprovou antes e passou
+depois**; teste que já passava antes é "prova fraca" e não conta. Veio de dois
+números: 46 concluídas com 3 provadas, e depois `comando_teste: "true"` entrando
+na estatística como prova.
+
+**Projeto** — o recipiente que agrupa tarefas, sessões, achados e o **contexto
+durável** de um trabalho. O contexto é injetado no prompt de toda tarefa daquele
+projeto: é o que faz um agente novo não recomeçar do zero.
 
 **Vínculo declarado** — 11 arestas, 28 soltas, 35 componentes desconexos. Não
 era um grafo; eram 35 grafinhos, e ninguém tinha visto porque nada media a
@@ -63,7 +70,9 @@ as antecessoras entregaram. E como a herança é só das dependências diretas, 
 leque precisa de um **nó de junção**: é o único workspace onde o produto inteiro
 coexiste.
 
-## As nove ferramentas
+## As doze ferramentas
+
+**Projeto:** `iniciar_projeto`, `listar_projetos`, `retomar_projeto`
 
 **Ler:** `consultar_grafo`, `consultar_achados`, `consultar_tarefa`,
 `listar_tarefas`, `ler_saida_execucao`, `listar_agentes`,
@@ -75,6 +84,9 @@ Duas coisas que não são óbvias:
 
 - **Criar já é despachar.** O escalonador pega da fila em segundos. Não existe
   passo separado de "agora execute".
+- **O papel roteia de verdade.** Cada papel tem agente próprio, recebe o
+  briefing daquele papel no prompt, e pode ter modelo próprio — `arquiteto`,
+  `seguranca` e `pentest` usam um modelo que raciocina mais.
 - **O `execucao_id` só vem de `consultar_tarefa`**, no campo `execucoes`. A
   tarefa não aponta para a execução diretamente.
 

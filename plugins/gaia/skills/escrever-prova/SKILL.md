@@ -14,6 +14,27 @@ essa exigência: **46 tarefas concluídas, 3 com prova**.
 
 > Os 95,8% não eram taxa de acerto. Eram taxa de agente dizendo que terminou.
 
+## O sistema agora MEDE isso, em vez de acreditar em você
+
+O comando roda **duas vezes**: antes de o agente trabalhar, na árvore que ele
+vai encontrar, e depois. As duas respostas ficam registradas.
+
+| antes | depois | classe | significa |
+|---|---|---|---|
+| falhou | passou | **provada** | o teste sabe reprovar |
+| passou | passou | **prova fraca** | o comando não prova nada |
+| — | falhou | reprovada | o teste derrubou a entrega |
+
+Isso nasceu de `comando_teste: "true"` entrando na estatística como prova. Nada
+é recusado por causa da classe — a tarefa roda igual — mas prova fraca **não
+conta na taxa**, e a classe fica visível.
+
+**A pergunta que você tem de fazer ao escrever o comando:**
+
+> Ele falharia AGORA, com a entrega ainda ausente?
+
+Se a resposta for não, ele não testa nada — e o sistema vai dizer isso.
+
 ## O que conta como prova
 
 Um comando que **roda** e **falha** se a entrega estiver errada. Três
@@ -21,7 +42,7 @@ propriedades, e faltando qualquer uma não é prova:
 
 1. **Executável** — roda no workspace da tarefa, sem intervenção humana
 2. **Discriminante** — passa com a entrega certa, falha com a errada
-3. **Barato** — segundos, não minutos
+3. **Barato** — segundos, não minutos (o teto do teste prévio é 20 segundos)
 
 ## Formas boas, por tipo de entrega
 
@@ -79,6 +100,16 @@ lendo daqui a três meses aceite. *"não tem teste"* não é justificativa;
 **Se você está escrevendo a justificativa porque não pensou num comando, volte
 e pense.** A justificativa é para o caso impossível, não para o caso difícil.
 
+## Um "passou antes" legítimo
+
+A tarefa cujo trabalho é **manter** algo funcionando — uma refatoração cuja
+prova é a suíte existente — passa antes por definição, e é uma tarefa boa. Ela
+fica classificada como prova fraca, e está tudo bem: o rótulo descreve o teste,
+não julga a tarefa.
+
+Se você quiser que ela conte como prova, o comando precisa medir o que a
+refatoração acrescenta, não só o que ela preserva.
+
 ## Ler o resultado: três campos, e a discordância importa
 
 `consultar_tarefa` devolve três coisas que medem coisas diferentes:
@@ -86,7 +117,8 @@ e pense.** A justificativa é para o caso impossível, não para o caso difícil
 | campo | o que significa |
 |---|---|
 | `estado: concluida` | **o agente parou** — nada mais que isso |
-| `teste_desfecho: passou` | **um comando rodou** e teve êxito |
+| `teste_antes` | o comando reprovava antes da entrega? (`falhou` é o bom) |
+| `teste_desfecho: passou` | **um comando rodou** depois e teve êxito |
 | `veredito` | a **verificação independente** concluiu algo |
 
 As combinações que você vai encontrar:

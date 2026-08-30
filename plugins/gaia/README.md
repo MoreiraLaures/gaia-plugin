@@ -23,7 +23,7 @@ registrada como conector, e o trabalho do plugin é ensinar o Claude a usá-la
 bem.
 
 Isso é decisão de desenho, não simplificação. Um plugin que declarasse o próprio
-servidor MCP criaria um segundo caminho para o mesmo Gaia: as nove ferramentas
+servidor MCP criaria um segundo caminho para o mesmo Gaia: as doze ferramentas
 apareceriam duas vezes com prefixos diferentes, e a configuração passaria a
 morar em dois lugares que podem discordar.
 
@@ -132,9 +132,12 @@ agentes procuram pelo **nome da ferramenta**, nunca pelo do servidor — e por
 isso não declaram allowlist: travar um allowlist com prefixo adivinhado deixa o
 agente sem nenhuma ferramenta e com um erro que não menciona o motivo.
 
-**Conector antigo guarda a lista de ferramentas antiga.** Se o seu conector foi
-criado quando o Gaia tinha cinco ferramentas, ele continua mostrando cinco.
-Reconecte para ver as nove.
+**Conector antigo guarda a lista de ferramentas antiga — e defasa em PEDACOS.** Se o seu conector foi
+criado quando o Gaia tinha menos ferramentas, ele continua mostrando aquelas —
+e o estado misto e o pior: parte das ferramentas nova, parte velha, e nada na
+saida distingue. Ja foi medido: sessao com 9, conector com 11, daemon com 12, e
+uma ferramenta na versao antiga sem o parametro que a nova tem.
+Reconecte para ver as doze.
 
 ---
 
@@ -153,6 +156,6 @@ heurístico. Fica declarado, não prescrito.
 
 ## Acoplamento com a versão do Gaia
 
-Este plugin assume as nove ferramentas e o campo `execucoes` em
+Este plugin assume as doze ferramentas e o campo `execucoes` em
 `consultar_tarefa`. Gaia anterior a isso conecta, e o agente encontra menos do
 que espera — ele reclama do que falta em vez de fingir que funcionou.

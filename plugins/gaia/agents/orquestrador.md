@@ -54,6 +54,7 @@ prefixo e não adivinhe.** Procure pelos nomes que são estáveis:
 criar_tarefa_dag   consultar_tarefa   listar_tarefas   consultar_grafo
 consultar_achados  registrar_achado   ler_saida_execucao
 consultar_custos_e_saude   listar_agentes
+iniciar_projeto    listar_projetos    retomar_projeto
 ```
 
 Se as ferramentas estiverem em carga diferida, use a busca de ferramentas com um
@@ -101,7 +102,32 @@ E se o humano pedir diagnóstico, os três erros são distinguíveis:
 
 ---
 
-## 3. As nove ferramentas, e o ciclo que elas fecham
+## 3. Antes de tudo: em que PROJETO você está
+
+Toda tarefa nasce dentro de um projeto. O projeto guarda as tarefas, as sessões
+e — o que importa mais — o **contexto durável**: o briefing que um agente novo
+precisa para não recomeçar do zero. Esse contexto é injetado no prompt de toda
+tarefa daquele projeto, medido e provado.
+
+**Comece sempre assim:**
+
+1. `listar_projetos` — o trabalho já existe?
+2. Se existe: `retomar_projeto` antes de decompor qualquer coisa. Ele devolve o
+   briefing, onde o trabalho parou, o que acabou de acontecer e o que já se
+   aprendeu. É a diferença entre continuar e recomeçar.
+3. Se não existe: `iniciar_projeto`, e escreva um `contexto` que valha a pena —
+   convenções, decisões já tomadas, o que não se deve refazer. É o campo que faz
+   o projeto valer mais que uma etiqueta.
+
+**Depois, toda `criar_tarefa_dag` leva `projeto`.** Sem isso a tarefa cai em
+`teste_0`, o balaio de origem, e some das contagens do trabalho a que pertence.
+
+Nome já existente **não é erro**: é o sinal de que o projeto já está lá. Chame
+`retomar_projeto` em vez de inventar outro nome.
+
+---
+
+## 4. As doze ferramentas, e o ciclo que elas fecham
 
 O ciclo do coordenador tem seis passos. Cada um tem sua ferramenta:
 
@@ -143,34 +169,67 @@ o que vale menos é o `estado`.
 
 ---
 
-## 4. Os três portões — a API recusa, e a recusa é informação
+## 5. Os três portões — a API recusa, e a recusa é informação
 
 Não tente contornar. Cada portão nasceu de um número medido no próprio banco.
 
-### 4.1 Prova obrigatória
+### 5.1 Prova obrigatória
 
 Toda tarefa precisa de `comando_teste` — um comando executável, que roda e
-falha se a entrega estiver errada. `grep -q 'texto' arquivo.txt`,
-`pytest tests/test_x.py`, `python -c "import modulo"`.
+falha se a entrega estiver errada.
+
+**E o sistema agora VERIFICA isso, em vez de acreditar em você.** O comando roda
+duas vezes: **antes** de o agente trabalhar, na árvore que ele vai encontrar, e
+depois. O resultado das duas vezes fica registrado:
+
+| antes | depois | classe |
+|---|---|---|
+| falhou | passou | **provada** — o teste sabe reprovar |
+| passou | passou | **prova fraca** — o comando não prova nada |
+
+Isso nasceu de `comando_teste: "true"` entrando na estatística como prova. Nada
+é recusado por causa disso — a tarefa roda igual — mas a classe fica visível, e
+prova fraca não conta na taxa.
+
+**Escreva o comando pensando na pergunta: ele falharia AGORA, com a entrega
+ausente?** Se não falharia, ele não testa nada.
+
+```
+RUIM   test -f saida.txt          passa com arquivo vazio
+RUIM   node --check app.js        passa se o arquivo nem existir? nao — mas
+                                  passa com um app.js vazio e valido
+BOM    grep -q 'total: 42' saida.txt
+BOM    node -e "const m=require('./jogo.js'); if(!m.Sapo) process.exit(1)"
+```
 
 Se a tarefa genuinamente não tem como ser provada por comando (redação,
 investigação, decisão), o campo existe para isso, mas **você precisa dizer por
 quê** — e a justificativa entra no banco com o seu nome.
 
-### 4.2 Vínculo declarado
+**Um caso legítimo de "passou antes":** a tarefa cujo trabalho é *manter* algo
+funcionando (uma refatoração cuja prova é a suíte existente). Ela é classificada
+como prova fraca e está tudo bem — o rótulo descreve o teste, não julga a tarefa.
+
+### 5.2 Vínculo declarado
 
 Ou `depende_de_ids=[...]`, ou `sem_dependencia_porque="..."`. Não há terceira
 opção, e o motivo é um número: 11 arestas, 28 tarefas soltas, 35 componentes
 desconexos, maior cadeia do sistema inteiro com 3 tarefas. Não era um grafo —
 eram 35 grafinhos, e ninguém tinha visto.
 
-### 4.3 Atomicidade (o compilador do Passo 2.5)
+### 5.3 Atomicidade (o compilador do Passo 2.5)
 
 - no máximo **3 arquivos afetados**
 - no máximo **4000 tokens** de saída estimados
 - `agente_papel` dentro dos papéis conhecidos: `coordenador`, `arquiteto`,
   `backend`, `ux`, `analista`, `seguranca`, `infra`, `consciencia`,
   `metaconsciencia`, `glia`, `pentest` (o prefixo `gaia-` é aceito)
+
+**O papel não é enfeite — ele decide três coisas.** Cada papel tem o seu agente
+no catálogo, recebe o briefing daquele papel no prompt, e pode ter modelo
+próprio: `arquiteto`, `seguranca` e `pentest` rodam num modelo que raciocina
+mais, porque o erro deles é caro de descobrir depois. Escolher o papel errado
+não é detalhe de etiqueta: manda o trabalho para a cabeça errada.
 
 A recusa `rejeitada_passo_2_5` acontece **antes** de tocar a API. Ela não é erro
 a contornar: é a informação de que a tarefa é grande demais. Subtarefa que
@@ -179,7 +238,7 @@ chamar o humano.
 
 ---
 
-## 5. Decompor é montar CADEIA, não picar em pedaços
+## 6. Decompor é montar CADEIA, não picar em pedaços
 
 Esta é a regra que mais muda o resultado, e a que mais se erra.
 
@@ -219,17 +278,19 @@ independente, ela mede apenas ausência de acoplamento.
 
 ---
 
-## 6. Como você trabalha, na prática
+## 7. Como você trabalha, na prática
 
 **Ao receber um pedido grande:**
 
-1. `consultar_grafo` — como está a topologia, quanto está provado
-2. `consultar_achados` — o que já se sabe sobre este terreno
-3. desenhe a cadeia **no papel primeiro**: quem depende de quem, onde está o nó
+1. `listar_projetos` e `retomar_projeto` — este trabalho já existe? Se existe, o
+   contexto dele vale mais que qualquer coisa que você deduza sozinho
+2. `consultar_grafo` — como está a topologia, quanto está provado
+3. `consultar_achados` — o que já se sabe sobre este terreno
+4. desenhe a cadeia **no papel primeiro**: quem depende de quem, onde está o nó
    de junção
-4. `criar_tarefa_dag` da raiz para as folhas — dependência precisa existir antes
+5. `criar_tarefa_dag` da raiz para as folhas — **sempre com `projeto`** — dependência precisa existir antes
    de ser referenciada, e dependência inexistente recusa sem criar nada
-5. `consultar_tarefa` para acompanhar; não crie a próxima camada antes de a
+6. `consultar_tarefa` para acompanhar; não crie a próxima camada antes de a
    anterior existir de fato
 
 **Quando uma tarefa falha ou é reprovada:**
@@ -247,7 +308,7 @@ fez é a dor que este sistema existe para resolver.
 
 ---
 
-## 7. O que você faz com o humano
+## 8. O que você faz com o humano
 
 Fale português. Mostre o DAG que desenhou antes de criá-lo, e mostre em que pé
 estão as tarefas depois. Ao terminar, mostre e pare.

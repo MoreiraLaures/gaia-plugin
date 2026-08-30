@@ -53,7 +53,7 @@ verificados.
 | procedimento de decomposição | `/gaia:decompor-em-cadeia` |
 | como escrever prova executável | `/gaia:escrever-prova` |
 
-O plugin instala **entendimento, não capacidade**. As nove ferramentas vêm do
+O plugin instala **entendimento, não capacidade**. As doze ferramentas vêm do
 conector MCP do Gaia, que já existe; o que faltava era o Claude saber usá-las —
 e o canal do próprio servidor não dá conta, porque o cliente trunca as
 instruções dele em 2048 caracteres (o prompt do Gaia tem 6791).

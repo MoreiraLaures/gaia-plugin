@@ -14,12 +14,22 @@ procedimento para fazer isso direito — e o número que ele existe para evitar 
 11 arestas, 28 tarefas soltas, 35 componentes desconexos, maior cadeia com 3
 tarefas.
 
-## Passo 0 — leia o terreno
+## Passo 0 — em que projeto, e o que já se sabe
 
 ```
+listar_projetos          o trabalho ja existe?
+retomar_projeto <nome>   se existe: o contexto dele vale mais que sua deducao
+iniciar_projeto <nome>   se nao: crie, com um `contexto` que valha a pena
 consultar_grafo
 consultar_achados
 ```
+
+O `contexto` do projeto é injetado no prompt de **toda** tarefa dele. É onde
+moram as convenções, as decisões já tomadas e o que não se deve refazer — e é
+por isso que retomar antes de decompor não é formalidade.
+
+**Toda `criar_tarefa_dag` daqui em diante leva `projeto`.** Sem isso a tarefa
+cai em `teste_0`, o balaio de origem, e some das contagens do seu trabalho.
 
 Do `consultar_grafo`, olhe `taxa_de_isolamento`. Alta significa que as
 decomposições anteriores fatiaram errado. Não adicione mais tarefas soltas a um
@@ -70,7 +80,10 @@ Antes de chamar `criar_tarefa_dag`, cada tarefa precisa passar:
 - [ ] **≤ 4000** em `estimativa_tokens_out`
 - [ ] `agente_papel` conhecido (`arquiteto`, `backend`, `ux`, `analista`,
       `seguranca`, `infra`, `consciencia`, `metaconsciencia`, `glia`, `pentest`)
-- [ ] `comando_teste` executável — ver a skill `escrever-prova`
+- [ ] `comando_teste` que **falharia agora**, com a entrega ausente — o sistema
+      roda o comando antes do trabalho e registra se ele sabe reprovar; ver a
+      skill `escrever-prova`
+- [ ] `projeto` preenchido
 - [ ] `depende_de_ids` **ou** `sem_dependencia_porque`
 
 Se estourar arquivos ou tokens, a tarefa é grande demais. Divida — isso é
