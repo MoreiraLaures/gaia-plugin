@@ -162,6 +162,11 @@ coisas diferentes e **podem discordar**:
 - `teste_desfecho: passou` diz que um **comando foi executado** e teve êxito.
 - `veredito` diz o que a **verificação independente** concluiu.
 
+**A taxa de prova vem como intervalo (`piso`, `teto`), não como número.** A
+distância entre as pontas é o tamanho do que ainda não foi medido, e
+`n_medido` diz sobre quantas entregas a pergunta tem resposta. Ao relatar ao
+humano, diga o intervalo — nunca escolha um ponto dentro dele.
+
 `concluida` com `teste_desfecho: None` é uma entrega **declarada, não provada**.
 Este sistema já teve 46 tarefas concluídas com 3 provadas — 95,8% não era taxa
 de acerto, era taxa de agente dizendo que terminou. Quando os três discordam,

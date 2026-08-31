@@ -35,6 +35,30 @@ conta na taxa**, e a classe fica visível.
 
 Se a resposta for não, ele não testa nada — e o sistema vai dizer isso.
 
+## A taxa de prova é um INTERVALO, não um número
+
+Quando você chamar `consultar_grafo` ou `retomar_projeto`, o campo `prova` vem
+assim:
+
+```
+piso            supoe que tudo o que nao foi medido NAO e prova
+teto            supoe que E
+n_medido        sobre quantas a pergunta tem resposta
+taxa_no_medido  a fracao provada DENTRO do que foi medido
+```
+
+**Leia sempre `taxa_no_medido` junto com `n_medido`.** Uma fração sobre n
+pequeno não é taxa, é anedota — `0,50` com `n_medido = 2` não quer dizer
+"metade das entregas é boa", quer dizer "duas foram medidas e uma passou".
+
+**E a distância entre piso e teto é o tamanho da própria ignorância.** Se ela
+estiver larga, a resposta honesta para "quanto está provado?" é *"entre X e Y, e
+a diferença é o que não foi medido"* — não um ponto entre os dois.
+
+Isso existe porque o mesmo dado produziu `0,4184` e `0,01` em relatórios
+consecutivos, e os dois pareciam medição. Eram as duas pontas do mesmo
+intervalo.
+
 ## O que conta como prova
 
 Um comando que **roda** e **falha** se a entrega estiver errada. Três
